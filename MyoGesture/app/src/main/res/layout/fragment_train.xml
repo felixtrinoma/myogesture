@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ProgressBar
+        android:id="@+id/record_progressbar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:indeterminate="true"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/record_chart"
+        app:layout_constraintTop_toTopOf="@+id/record_chart" />
+
+    <TextView
+        android:id="@+id/record_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Configuring devices…"
+        app:layout_constraintBottom_toBottomOf="@+id/record_chart"
+        app:layout_constraintEnd_toEndOf="@+id/record_chart"
+        app:layout_constraintStart_toStartOf="@+id/record_chart"
+        app:layout_constraintTop_toBottomOf="@+id/record_progressbar" />
+
+    <com.github.mikephil.charting.charts.LineChart
+        android:id="@+id/record_chart"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+    </com.github.mikephil.charting.charts.LineChart>
+</androidx.constraintlayout.widget.ConstraintLayout>
