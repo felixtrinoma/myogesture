@@ -4,16 +4,33 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import fr.trinoma.myogesture.ui.train.RecordingState;
+
 public class DetectViewModel extends ViewModel {
 
-    private MutableLiveData<String> mText;
+    private MutableLiveData<String> detectedGesture;
 
     public DetectViewModel() {
-        mText = new MutableLiveData<>();
-        mText.setValue("Detection not implemented yet");
+        detectedGesture = new MutableLiveData<>();
+        state = new MutableLiveData<>();
     }
 
-    public LiveData<String> getText() {
-        return mText;
+    public LiveData<String> getDetectedGesture() {
+        return detectedGesture;
+    }
+
+    public void postDetectedGesture(String gesture) {
+        detectedGesture.postValue(gesture);
+    }
+
+    private MutableLiveData<DetectionState> state;
+
+    public LiveData<DetectionState> getState() {
+        return state;
+    }
+
+    public void postState(DetectionState newState) {
+        state.postValue(newState);
+
     }
 }

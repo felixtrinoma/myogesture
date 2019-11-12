@@ -32,6 +32,7 @@ repositories {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'fr.trinoma.daq:delsys-android-wrapper:0.0.3'
+    api 'org.tensorflow:tensorflow-lite:0.0.0-nightly'
 
     implementation 'androidx.appcompat:appcompat:1.0.0'
     testImplementation 'junit:junit:4.12'

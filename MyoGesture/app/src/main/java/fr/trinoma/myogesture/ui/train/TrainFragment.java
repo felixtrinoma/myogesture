@@ -47,6 +47,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
@@ -57,7 +58,10 @@ import fr.trinoma.myogesture.R;
 import fr.trinoma.myogesture.RawDataLogger;
 import fr.trinoma.myogesture.delsys.DelsysApi;
 import fr.trinoma.myogesture.interfaces.DataAcquisitionApi;
+import fr.trinoma.myogesture.interfaces.DataAcquisitionInfo;
 import fr.trinoma.myogesture.interfaces.device.Device;
+import fr.trinoma.myogesture.interfaces.signal.ChannelReader;
+import fr.trinoma.myogesture.interfaces.signal.SampledSignalType;
 
 public class TrainFragment extends Fragment {
 
@@ -139,8 +143,6 @@ public class TrainFragment extends Fragment {
 
     private class RecordingThread extends Thread {
 
-        long sampleId = 0;
-
         private void record() throws IOException {
             chart.getLineData().clearValues();
             final List<Device> devices = dataAcquisition.getConnectedDevices();
@@ -167,15 +169,17 @@ public class TrainFragment extends Fragment {
 
             RawDataLogger dataLogger = RawDataLogger.make(rawDataFile);
 
-            dataAcquisition.start();
+            DataAcquisitionInfo info = dataAcquisition.start();
 
-            ByteBuffer buf = ByteBuffer.allocate(1024);
+            long[] sampleIds = new long[info.getSignals().size()];
+
+            ByteBuffer buf = ByteBuffer.allocate(info.getMinimumBufferSize());
+
             while (!isInterrupted()) {
                 buf.clear();
                 int ret = dataAcquisition.read(buf);
                 buf.flip();
-                if (ret < 0 || buf.remaining() < devices.size() * 10 * 8) {
-                    Log.i(TAG, "Not enough bytes to read: " + buf.remaining());
+                if (ret < 0) {
                     Log.i(TAG, "read() returned: " + ret);
                     dataLogger.close();
                     return;
@@ -186,16 +190,17 @@ public class TrainFragment extends Fragment {
                 buf.rewind();
 
                 LineData data = chart.getLineData();
-                for (int i = 0; i < 10; ++i) {
-                    for (int device = 0; device < devices.size(); ++device) {
-                        float value = (float) buf.getDouble((device * 10 + i) * 8);
+                for (int channelId = 0; channelId < info.getSignals().size(); channelId++) {
+                    ChannelReader channelReader = info.getSignals().get(channelId).getReader();
+                    for (int i = 0; i < channelReader.getCount(buf); i++) {
+                        float value = channelReader.get(buf, i);
                         if (Float.isNaN(value)) {
                             value = 0.0f;
                         }
-                        data.addEntry(new Entry((sampleId + i) * 0.003f, value), device);
+                        data.addEntry(new Entry((sampleIds[channelId]) * ((SampledSignalType)channelReader.getSignalType()).getSampleInterval(), value), channelId);
+                        sampleIds[channelId]++;
                     }
                 }
-                sampleId += 10;
                 mainHandler.post(invalidateChart);
                 trainViewModel.postState(RecordingState.LOGGING);
             }

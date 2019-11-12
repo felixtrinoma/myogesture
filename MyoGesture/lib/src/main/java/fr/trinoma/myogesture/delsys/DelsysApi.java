@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -18,9 +19,12 @@ import fr.trinoma.daq.delsys.androidwrapper.ComponentConfig;
 import fr.trinoma.daq.delsys.androidwrapper.ComponentInfo;
 import fr.trinoma.daq.delsys.androidwrapper.DelsysApiWrapper;
 import fr.trinoma.myogesture.interfaces.DataAcquisitionApi;
+import fr.trinoma.myogesture.interfaces.DataAcquisitionInfo;
 import fr.trinoma.myogesture.interfaces.device.Device;
 import fr.trinoma.myogesture.interfaces.device.DeviceListener;
 import fr.trinoma.myogesture.interfaces.device.Mode;
+import fr.trinoma.myogesture.interfaces.signal.ChannelReader;
+import fr.trinoma.myogesture.interfaces.signal.SampledSignalType;
 
 public class DelsysApi implements DataAcquisitionApi {
 
@@ -72,9 +76,14 @@ public class DelsysApi implements DataAcquisitionApi {
                 ComponentInfo[] components = null;
                 synchronized (DELSYS_API) {
                     // FIXME check when we can scan exactly
-                    if (isInitialized && DELSYS_API.getState() <= PIPELINE_Connected && DELSYS_API.scan()) {
-                        components = DELSYS_API.listDevices();
-                        scanFinishedAt = System.nanoTime() / 1e9;
+                    if (isInitialized && DELSYS_API.getState() <= PIPELINE_Armed) {
+                        if (DELSYS_API.getState() > PIPELINE_Connected) {
+                            DELSYS_API.disarm();
+                        }
+                        if (DELSYS_API.scan()) {
+                            components = DELSYS_API.listDevices();
+                            scanFinishedAt = System.nanoTime() / 1e9;
+                        }
                     }
                 }
                 // Scan was not possible, wait after releasing DELSYS_API
@@ -182,8 +191,9 @@ public class DelsysApi implements DataAcquisitionApi {
 
 
     @Override
-    public void start() throws IOException {
+    public DataAcquisitionInfo start() {
         ensureInitialized();
+        DataAcquisitionInfo aquisitionInfo = new DataAcquisitionInfo();
         synchronized (DELSYS_API) {
             if (selectedDevices.isEmpty()) {
                 throw new UnsupportedOperationException(
@@ -200,7 +210,7 @@ public class DelsysApi implements DataAcquisitionApi {
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
-                    return;
+                    return aquisitionInfo;
                 }
             }
             final ArrayList<ComponentConfig> devicesConfig = new ArrayList<>();
@@ -209,24 +219,48 @@ public class DelsysApi implements DataAcquisitionApi {
                         entry.getKey(), entry.getValue().getDescription()));
             }
             Log.i(TAG, "Arming " + devicesConfig.size() + " devices");
-            ChannelInfo[] info = DELSYS_API.arm(devicesConfig);
-            if (info == null) {
+            ChannelInfo[] infos = DELSYS_API.arm(devicesConfig);
+            if (infos == null) {
                 Log.e(TAG, "Unable to arm pipleline");
-                return;
+                return aquisitionInfo;
             }
             Log.i(TAG, "Armed");
+
+            int offset = 0;
+            for (final ChannelInfo info : infos) {
+                // I get twice the advertized amount, don’t know why
+                final int samplesPerFrame = info.getSamplesPerFrame() * 2;
+                // TODO fill description and device
+                aquisitionInfo.addSignal(null, new DelsysChannelReader(offset, samplesPerFrame, new SampledSignalType() {
+                    @Override
+                    public int getSizeOfSample() {
+                        return 8;
+                    }
+
+                    @Override
+                    public float getSampleInterval() {
+                        return (float) info.getFrameInterval() / samplesPerFrame;
+                    }
+                }), "");
+                offset += samplesPerFrame;
+            }
+            aquisitionInfo.setMinimumBufferSize(offset * 8);
+
             Set<String> presentComponents = new HashSet<>();
-            for (int i = 0; i < info.length; ++i) {
-                presentComponents.add(info[i].getComponentId());
+            for (int i = 0; i < infos.length; ++i) {
+                presentComponents.add(infos[i].getComponentId());
             }
             if (presentComponents.size() != selectedDevices.size()) {
                 // This happened when not waiting after scan…
-                throw new IOException("Some selected components missing after configuration");
+                Log.e(TAG, "Some selected components missing after configuration");
+                // TODO return false?
+                return aquisitionInfo;
             }
             Log.i(TAG, "Srarting");
             DELSYS_API.start();
             Log.i(TAG, "Started");
         }
+        return aquisitionInfo;
     }
 
     @Override
@@ -237,6 +271,7 @@ public class DelsysApi implements DataAcquisitionApi {
                 if (!DELSYS_API.stop()) {
                     Log.e(TAG, "Failed to stop");
                 }
+                // TODO cannot disarm here, but works a bit later
 //                if (!DELSYS_API.disarm()) {
 //                    Log.e(TAG, "Failed to disarm");
 //                }

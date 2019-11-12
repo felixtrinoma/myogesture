@@ -9,11 +9,7 @@
         android:id="@+id/navigation_devices"
         android:name="fr.trinoma.myogesture.ui.devices.DevicesFragment"
         android:label="@string/menu_devices"
-        tools:layout="@layout/fragment_devices" >
-        <action
-            android:id="@+id/action_navigation_devices_to_navigation_record"
-            app:destination="@id/navigation_record" />
-    </fragment>
+        tools:layout="@layout/fragment_devices" />
 
     <fragment
         android:id="@+id/navigation_record"
@@ -29,5 +25,9 @@
         android:id="@+id/navigation_detect"
         android:name="fr.trinoma.myogesture.ui.detect.DetectFragment"
         android:label="@string/menu_detect"
-        tools:layout="@layout/fragment_detect" />
+        tools:layout="@layout/fragment_detect" >
+        <action
+            android:id="@+id/action_navigation_detect_to_navigation_devices"
+            app:destination="@id/navigation_devices" />
+    </fragment>
 </navigation>

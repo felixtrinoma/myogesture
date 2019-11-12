@@ -7,6 +7,7 @@ import java.util.List;
 import fr.trinoma.myogesture.interfaces.device.Device;
 import fr.trinoma.myogesture.interfaces.device.DeviceListener;
 import fr.trinoma.myogesture.interfaces.device.Mode;
+import fr.trinoma.myogesture.interfaces.signal.ChannelReader;
 
 public interface DataAcquisitionApi {
 
@@ -59,7 +60,7 @@ public interface DataAcquisitionApi {
      * Starts capturing data from the selected devices.
      * Starts the detection algorithms depending on registered listeners.
      */
-    void start() throws IOException;
+    DataAcquisitionInfo start();
 
     /**
      * Stops capturing data from the selected devices, keeps the current configuration.
