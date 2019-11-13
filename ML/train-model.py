@@ -40,12 +40,12 @@ model.add(layers.Dense(100,
         activation='relu',
         kernel_initializer='random_uniform',
         bias_initializer='zeros'))
-model.add(layers.Dropout(0.25, input_shape=(100,)))
+# # model.add(layers.Dropout(0.25, input_shape=(100,)))
 model.add(layers.Dense(50,
         activation='relu',
         kernel_initializer='random_uniform',
         bias_initializer='zeros'))
-model.add(layers.Dropout(0.25, input_shape=(50,)))
+# model.add(layers.Dropout(0.25, input_shape=(50,)))
 
 # Output layer, works pretty without hidden layers
 model.add(layers.Dense(10,
@@ -72,6 +72,20 @@ stamps_emgrms = []
 s1_emgrms = []
 s2_emgrms = []
 
+# Unpack 2 EMG RMS in EMG RMS mode
+def unpack_raw_data(data):
+    data = struct.unpack('>20d', data)
+    emg1 = data[0:10]
+    emg2 = data[10:20]
+    return emg1, emg2
+
+# Unpack 2 EMG RMS in EMG RMS + Acc mode
+# def unpack_raw_data(data):
+#     data = struct.unpack('>44d', data)
+#     emg1 = data[0:10]
+#     emg2 = data[22:32]
+#     return emg1, emg2
+
 with open(data_log,'rb') as f:
     while True:
         empty = f.readline()
@@ -92,12 +106,11 @@ with open(data_log,'rb') as f:
         data = f.read(size)
         if len(data) != size:
             break
+        # First frame might be used to store metadata instead of actual data
         if not is_first_frame:
-            data = struct.unpack('>20d', data)
-            for i in range(0, 10):
-                s1_emgrms.append(data[i])
-            for i in range(0, 10):
-                s2_emgrms.append(data[10+i])
+            emg1, emg2 = unpack_raw_data(data)
+            s1_emgrms += emg1
+            s2_emgrms += emg2
             for i in range(0, 10):
                 stamps_emgrms.append(stamp - first_stamp + i * EMG_SAMPLE_INTERVAL)
 
@@ -127,20 +140,26 @@ def plot_emg_sample(axis, samples):
     stamps = [t * EMG_SAMPLE_INTERVAL for t in range(0, len(samples))]
     axis.plot(stamps, samples)
 
+# Display manual labels,
+# each row containing all the samples
+
+sorted_manual_labels = [[], [], [], []]
+for row in manual_labels:
+    sorted_manual_labels[row[1]].append(row[0])
+
 fig = plt.figure()
-cols = 8
-rows = 10
+rows = len(sorted_manual_labels)
+cols = max([len(l) for l in sorted_manual_labels])
 for r in range(0,rows):
     for c in range(0,cols):
         i = r*cols+c
-        if i >= len(manual_labels):
+        if c >= len(sorted_manual_labels[r]):
             break
-        index, label = manual_labels[i]
+        index = sorted_manual_labels[r][c]
         ax = fig.add_subplot(rows,cols,i+1)
-        #label, stamp = random.choice(manual_labels)
+        ax.set_ylim([0.0, 1.0])
         s1 = extract_feature(s1_emgrms, index, GESTURE_DURATION, 0)
         s2 = extract_feature(s2_emgrms, index, GESTURE_DURATION, 0)
-        ax.text(0.7, 0.9, str(label) + " " + str(i), transform=ax.transAxes)
         plot_emg_sample(ax, s1)
         plot_emg_sample(ax, s2)
 
@@ -180,8 +199,6 @@ data_val, labels_val = make_data_and_labels(manual_labels_val)
 data_train, labels_train = make_data_and_labels(
     manual_labels_train,
     augment = AUGMENTATION_RATIO, max_offset = MAX_AUGMENTATION_OFFSET)
-
-
 
 class PlotHistory(keras.callbacks.Callback):
 
