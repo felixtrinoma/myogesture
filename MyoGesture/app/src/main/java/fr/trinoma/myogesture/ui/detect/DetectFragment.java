@@ -24,9 +24,7 @@ import androidx.navigation.fragment.NavHostFragment;
 import org.tensorflow.lite.Interpreter;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.LinkedList;
-import java.util.List;
 
 import fr.trinoma.myogesture.Config;
 import fr.trinoma.myogesture.MainActivity;
@@ -38,7 +36,6 @@ import fr.trinoma.myogesture.interfaces.GestureListener;
 import fr.trinoma.myogesture.interfaces.signal.ChannelReader;
 import fr.trinoma.myogesture.interfaces.signal.SampledSignalType;
 import fr.trinoma.myogesture.processing.RawDataTensorflowModel;
-import fr.trinoma.myogesture.ui.train.TrainFragmentDirections;
 
 import static fr.trinoma.myogesture.ui.detect.DetectionState.STARTING;
 import static fr.trinoma.myogesture.ui.detect.DetectionState.STOPPED;
@@ -165,7 +162,7 @@ public class DetectFragment extends Fragment {
                     channels.add(new Pair<>(emg1.getReader(), frameSize));
                     channels.add(new Pair<>(emg2.getReader(), frameSize));
 
-                    RawDataTensorflowModel model = new RawDataTensorflowModel(interpreterFinal, channels, info.getMinimumBufferSize());
+                    RawDataTensorflowModel model = new RawDataTensorflowModel(interpreterFinal, channels, Config.GESTURES.length);
                     gestureRecognition.setDetectionModel(model);
                     detectViewModel.postState(DetectionState.STARTED);
                 }
@@ -208,7 +205,7 @@ public class DetectFragment extends Fragment {
                     detectViewModel.postDetectedGesture("Stopping…");
                     break;
                 case STOPPED:
-                    progressBar.setVisibility(View.VISIBLE);
+                    progressBar.setVisibility(View.GONE);
                     detectViewModel.postDetectedGesture("");
                     break;
             }

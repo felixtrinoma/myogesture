@@ -3,15 +3,15 @@ package fr.trinoma.myogesture.delsys;
 import java.nio.ByteBuffer;
 
 import fr.trinoma.myogesture.interfaces.signal.ChannelReader;
-import fr.trinoma.myogesture.interfaces.signal.SignalType;
+import fr.trinoma.myogesture.interfaces.signal.SampledSignalType;
 
 public class DelsysChannelReader implements ChannelReader {
 
     private final int count;
     private final int offset;
-    private final SignalType signalType;
+    private final SampledSignalType signalType;
 
-    DelsysChannelReader(int offset, int count, SignalType signalType) {
+    DelsysChannelReader(int offset, int count, SampledSignalType signalType) {
         this.count = count;
         this.offset = offset;
         this.signalType = signalType;
@@ -28,7 +28,7 @@ public class DelsysChannelReader implements ChannelReader {
     }
 
     @Override
-    public SignalType getSignalType() {
+    public SampledSignalType getSignalType() {
         return signalType;
     }
 }

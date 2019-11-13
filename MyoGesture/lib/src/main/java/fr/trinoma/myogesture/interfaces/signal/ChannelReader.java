@@ -8,5 +8,5 @@ public interface ChannelReader {
 
     float get(ByteBuffer buf, int i);
 
-    SignalType getSignalType();
+    SampledSignalType getSignalType();
 }

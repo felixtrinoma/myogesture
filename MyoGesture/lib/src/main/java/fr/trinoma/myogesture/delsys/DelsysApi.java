@@ -228,10 +228,13 @@ public class DelsysApi implements DataAcquisitionApi {
 
             int offset = 0;
             for (final ChannelInfo info : infos) {
-                // I get twice the advertized amount, don’t know why
-                final int samplesPerFrame = info.getSamplesPerFrame() * 2;
-                // TODO fill description and device
-                aquisitionInfo.addSignal(null, new DelsysChannelReader(offset, samplesPerFrame, new SampledSignalType() {
+                Log.i(TAG, String.format(Locale.US, "Channel for %s: %s, %d, %f",
+                        info.getComponentId(), info.getUnit(), info.getSamplesPerFrame(), info.getFrameInterval()));
+
+                // TODO I get twice the advertized amount per frame, don’t know why
+                final int actualSamplesPerFrame = info.getSamplesPerFrame() * 2;
+                Device device = connectedDevices.get(info.getComponentId());
+                aquisitionInfo.addSignal(device, new DelsysChannelReader(offset, actualSamplesPerFrame, new SampledSignalType() {
                     @Override
                     public int getSizeOfSample() {
                         return 8;
@@ -239,10 +242,10 @@ public class DelsysApi implements DataAcquisitionApi {
 
                     @Override
                     public float getSampleInterval() {
-                        return (float) info.getFrameInterval() / samplesPerFrame;
+                        return (float) info.getFrameInterval() / info.getSamplesPerFrame();
                     }
                 }), "");
-                offset += samplesPerFrame;
+                offset += actualSamplesPerFrame;
             }
             aquisitionInfo.setMinimumBufferSize(offset * 8);
 

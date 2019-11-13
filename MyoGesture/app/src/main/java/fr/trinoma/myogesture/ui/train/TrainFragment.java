@@ -44,6 +44,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -74,9 +75,6 @@ public class TrainFragment extends Fragment {
     private ProgressBar progressBar;
     private DataAcquisitionApi dataAcquisition;
     private FileProvider fileProvider;
-
-    // Get a handler that can be used to post to the main thread
-    Handler mainHandler = new Handler(Looper.getMainLooper());
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -190,16 +188,22 @@ public class TrainFragment extends Fragment {
                 buf.rewind();
 
                 LineData data = chart.getLineData();
-                for (int channelId = 0; channelId < info.getSignals().size(); channelId++) {
-                    ChannelReader channelReader = info.getSignals().get(channelId).getReader();
-                    for (int i = 0; i < channelReader.getCount(buf); i++) {
-                        float value = channelReader.get(buf, i);
-                        if (Float.isNaN(value)) {
-                            value = 0.0f;
+                try {
+                    for (int channelId = 0; channelId < info.getSignals().size(); channelId++) {
+                        ChannelReader channelReader = info.getSignals().get(channelId).getReader();
+                        for (int i = 0; i < channelReader.getCount(buf); i++) {
+                            float value = channelReader.get(buf, i);
+                            if (Float.isNaN(value)) {
+                                value = 0.0f;
+                            }
+                            data.addEntry(new Entry((sampleIds[channelId]) * ((SampledSignalType) channelReader.getSignalType()).getSampleInterval(), value), channelId);
+                            sampleIds[channelId]++;
                         }
-                        data.addEntry(new Entry((sampleIds[channelId]) * ((SampledSignalType)channelReader.getSignalType()).getSampleInterval(), value), channelId);
-                        sampleIds[channelId]++;
                     }
+                } catch (BufferOverflowException e) {
+                    // Do not stop so we can continue to log
+                    // and check what happended in the raw data log.
+                    Log.e(TAG, "Unexpected buffer size, logged data will be incomplete");
                 }
                 mainHandler.post(invalidateChart);
                 trainViewModel.postState(RecordingState.LOGGING);

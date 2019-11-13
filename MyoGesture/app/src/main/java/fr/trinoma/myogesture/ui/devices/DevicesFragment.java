@@ -69,11 +69,15 @@ public class DevicesFragment extends Fragment {
                 for (Mode mode : modes) {
                     Log.i(TAG, mode.getDescription());
                 }
-                if (isConnected) {
-//                    dataAcquisition.selectDevice(device, DelsysMode.get("EMG RMS+ACC,ACC:+/-4g"), null);
-                    dataAcquisition.selectDevice(device, DelsysMode.get("EMG RMS"), null);
-                } else {
+                if (!isConnected) {
                     dataAcquisition.unselectDevice(device);
+                } else if (device.getModel() != null) {
+                    if (device.getModel().contains("Avanti")) {
+                        dataAcquisition.selectDevice(device, DelsysMode.get("EMG RMS"), null);
+//                    dataAcquisition.selectDevice(device, DelsysMode.get("EMG RMS+ACC,ACC:+/-4g"), null);
+                    } else {
+                        dataAcquisition.selectDevice(device, DelsysMode.get("EMG RMS x4"), null);
+                    }
                 }
             }
         });
