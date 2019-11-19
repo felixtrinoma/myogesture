@@ -21,7 +21,8 @@ This part is still experimental, done on a computer for now.
 ```bash
 python3 -m venv myogesture-py3
 source myogesture-py3/bin/activate
-pip install numpy matplotlib scipy tensorflow
+pip install --upgrade pip
+pip install -r requirements.txt
 ```
 
 ### Get your data
@@ -42,7 +43,7 @@ adb pull /storage/0123-4567/Android/data/fr.trinoma.myogesture/files/
 python ML/train-model.py files/2019-11-12-13-37-14.dat files /2019-11-12-13-37-14.labels.txt
 ```
 
-The first graph shows the labeled data samples. Their values should lie between 0.0 and 1.0. If those samples looks hard to distinguish, the model might not be able to classify them correctly:
+The first graph shows the labeled data samples. Their values should lie between 0.0 and 1.0. If those samples look hard to distinguish, the model might not be able to classify them correctly:
 
 ![alt text](https://cyril.lugan.fr/assets/stash/2019-11-13-myogesture-samples.png)
 
