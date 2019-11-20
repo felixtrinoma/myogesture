@@ -103,17 +103,28 @@ if __name__ == '__main__':
                         help=("Layout of the raw data frames, "
                               "consisting of concatenated samples of each channels"),
                         nargs='+', default=None, type=int)
+    parser.add_argument("--channels",
+                        help=("List of channels from the raw data to use. "
+                              "Channels specified as ids starting from 0. "
+                              "ie. 0 3 to use the first and fourth."),
+                        nargs='+', default=None, type=int)
     parser.add_argument("--plot",
                         help="Plots channels form data",
                         action='store_true')
     parser.add_argument("--export-csv",
                         help="Export channels as csv files",
                         action='store_true')
+    parser.add_argument("--labelize",
+                    help="Print markers location when clicking on data",
+                    action='store_true')
 
     args = parser.parse_args()
 
     with open(args.data, 'rb') as f:
         timestamps, channels = read(f, args.frame_layout)
+
+    if args.channels is None:
+        args.channels = range(len(channels))
 
     if args.plot:
         import matplotlib.pyplot as plt
@@ -124,17 +135,54 @@ if __name__ == '__main__':
         plt.plot(range(len(frame_intervals)), frame_intervals)
 
         fig = plt.figure()
-        for i, channel in enumerate(channels):
-            ax = fig.add_subplot(len(channels), 1, i+1)
-            ax.plot(range(len(channel)), channel)
+        for i, channel_id in enumerate(args.channels):
+            channel = channels[channel_id]
+            ax = fig.add_subplot(len(args.channels), 1, i+1)
+            ax.plot(channel)
+
+        plt.show()
+
+    if args.labelize:
+        import matplotlib.pyplot as plt
+        from matplotlib.widgets import Button
+        import numpy as np
+
+        class Cursor(object):
+            def __init__(self, fig, ax):
+                self.fig = fig
+                self.ax = ax
+                self.line = ax.axvline(color='k')
+
+            def update_cursor(self, x):
+                self.line.set_xdata(x)
+                self.ax.figure.canvas.draw()
+
+            def mouse_click(self, event):
+                # > 1.0 filters out button clicks, don’t know how to handle it better
+                if event.xdata > 1.0 and event.inaxes and self.fig.canvas.manager.toolbar._active is None:
+                    self.update_cursor(round(event.xdata))
+
+            def button_clicked(self, label):
+                print(int(self.line.get_xdata()))
+
+        fig, ax = plt.subplots()
+
+        cursor = Cursor(fig, ax)
+        fig.canvas.mpl_connect('button_press_event', cursor.mouse_click)
+        axbtn = plt.axes([0.81, 0.05, 0.1, 0.075])
+        button = Button(axbtn, 'Log')
+        button.on_clicked(cursor.button_clicked)
+
+        for channel_id in args.channels:
+            ax.plot(channels[channel_id])
 
         plt.show()
 
     if args.export_csv:
         import csv
-
-        for i, channel in enumerate(channels):
-            with open(args.data + '.channel' + str(i) + '.csv', 'w') as csvfile:
+        for i, channel_id in enumerate(args.channels):
+            channel = channels[channel_id]
+            with open(args.data + '.channel' + str(channel_id) + '.csv', 'w') as csvfile:
                 writer = csv.writer(csvfile)
                 for sample in channel:
                     writer.writerow([sample])
