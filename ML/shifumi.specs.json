@@ -1,0 +1,23 @@
+{
+	"signals": {
+		"EMG RMS 1" : {
+			"sample_interval": 0.003,
+			"scale": {"from": [0, 0.0002], "to": [0, 1]}
+		},
+		"EMG RMS 2" : {
+			"sample_interval": 0.003,
+			"scale": {"from": [0, 0.0002], "to": [0, 1]}
+		}
+	},
+	"model": {
+		"input": {
+			"type": "concatenated",
+			"signals": ["EMG RMS 1", "EMG RMS 2"],
+			"duration": 2.5
+		},
+		"output": {
+			"type": "one-hot",
+			"labels": ["0", "1", "2", "3"]
+		}
+	}
+}
