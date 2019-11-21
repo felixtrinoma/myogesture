@@ -189,11 +189,14 @@ public class MyoGestureRecognition implements GestureRecognition, DataAcquisitio
         @Override
         public void run() {
             while (!isInterrupted() && MyoGestureRecognition.this.getState() == DataAcquisitionApi.State.STARTED) {
-//                try {
-//                    Thread.sleep(10);
-//                } catch (InterruptedException e) {
-//                    return;
-//                }
+                if (detectionModel == null) {
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        return;
+                    }
+                    continue;
+                }
                 long stamp = System.nanoTime();
                 float[] scores = detectionModel.run();
                 int maxScoreId = 0;
