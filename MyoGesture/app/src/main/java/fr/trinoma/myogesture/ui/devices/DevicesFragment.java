@@ -72,11 +72,11 @@ public class DevicesFragment extends Fragment {
                 if (!isConnected) {
                     dataAcquisition.unselectDevice(device);
                 } else if (device.getModel() != null) {
-                    if (device.getModel().contains("Avanti")) {
+                    if (device.getModel().contains("Avanti T14")) {
                         dataAcquisition.selectDevice(device, DelsysMode.get("EMG RMS"), null);
 //                    dataAcquisition.selectDevice(device, DelsysMode.get("EMG RMS+ACC,ACC:+/-4g"), null);
                     } else {
-                        dataAcquisition.selectDevice(device, DelsysMode.get("EMG RMS x4"), null);
+                        dataAcquisition.selectDevice(device, DelsysMode.get("EMG RMS x4 plus IMU,ACC:+/-16g,GYRO:+/-2000dps"), null);
                     }
                 }
             }
